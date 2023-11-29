@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Document</title>
+	<style>
+		* {
+			box-sizing: inherit;
+		}
+
+		html {
+			-webkit-text-size-adjust: 100%;
+			text-rendering: optimizeLegibility;
+			font-synthesis: none;
+
+			font-size: 18px;
+			
+			box-sizing: border-box;
+		}
+
+		body {
+			margin: 0;
+			padding: 0;
+		}
+
+		section {
+			padding: 0.5rem;
+			height: 25rem;
+		}
+
+		section > div {
+			border-radius: 0.5rem;
+			border: 2px solid black;
+			height: 95%;
+			margin-bottom: 1rem;
+
+			display: flex;
+			align-items: flex-end;
+		}
+
+		section > div > div[data-child] {
+			flex: 1;
+			border-top-left-radius: 0.25rem;
+			border-top-right-radius: 0.25rem;
+
+			background-color: blue;
+
+			transition-property: background-color, height;
+			will-change: background-color, height;
+			transition-duration: 250ms;
+
+			height: calc(var(--_height) - 0.5rem);
+
+			margin-inline: 0.25rem;
+			display: inline-block;
+		}
+
+		section > div > div[data-child][data-highlighted=true] {
+			background-color: green;
+		}
+	</style>
+</head>
+<body>
+	<section>
+		<div id="bubble-sort" data-sortingtype="bubble_sort">
+			<div data-child="" data-value="59"></div>
+			<div data-child="" data-value="52"></div>
+			<div data-child="" data-value="30"></div>
+			<div data-child="" data-value="32"></div>
+			<div data-child="" data-value="10"></div>
+			<div data-child="" data-value="24"></div>
+			<div data-child="" data-value="42"></div>
+			<div data-child="" data-value="8"></div>
+			<div data-child="" data-value="12"></div>
+			<div data-child="" data-value="48"></div>
+			<div data-child="" data-value="29"></div>
+			<div data-child="" data-value="38"></div>
+			<div data-child="" data-value="39"></div>
+			<div data-child="" data-value="45"></div>
+			<div data-child="" data-value="16"></div>
+			<div data-child="" data-value="19"></div>
+			<div data-child="" data-value="21"></div>
+			<div data-child="" data-value="22"></div>
+			<div data-child="" data-value="12"></div>
+			<div data-child="" data-value="40"></div>
+			<div data-child="" data-value="60"></div>
+			<div data-child="" data-value="46"></div>
+			<div data-child="" data-value="26"></div>
+			<div data-child="" data-value="4"></div>
+			<div data-child="" data-value="18"></div>
+			<div data-child="" data-value="16"></div>
+			<div data-child="" data-value="52"></div>
+			<div data-child="" data-value="6"></div>
+			<div data-child="" data-value="11"></div>
+			<div data-child="" data-value="9"></div>
+			<div data-child="" data-value="15"></div>
+			<div data-child="" data-value="21"></div>
+		</div>		
+
+		<button type="button" aria-controls="bubble-sort" data-start>
+			Start Bubble Sort
+		</button>
+		<button type="button" aria-controls="bubble-sort" data-stop>
+			Stop Bubble Sort
+		</button>
+	</section>
+	<script src="app.js"></script>
+</body>
+</html>

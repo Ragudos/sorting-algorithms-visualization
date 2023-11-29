@@ -1,0 +1,1 @@
+require("@webdevaaron/live-server");
