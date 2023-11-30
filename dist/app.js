@@ -96,9 +96,9 @@ function swap(el1, el2) {
         const temp = el1.style.getPropertyValue("--_height");
         el1.style.setProperty("--_height", el2.style.getPropertyValue("--_height"));
         el2.style.setProperty("--_height", temp);
-		const temp_value = el1.getAttribute("data-value") || "1";
-		el1.setAttribute("data-value", el2.getAttribute("data-value") || "1");
-		el2.setAttribute("data-value", temp_value);
+	const temp_value = el1.getAttribute("data-value") || "1";
+	el1.setAttribute("data-value", el2.getAttribute("data-value") || "1");
+	el2.setAttribute("data-value", temp_value);
  
         window.requestAnimationFrame(function () {
             // For waiting for .25 sec
