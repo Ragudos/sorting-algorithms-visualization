@@ -1,5 +1,7 @@
 // @ts-check
 
+let did_stop;
+
 /**
  * @param {NodeListOf<Element>} items
  */
@@ -24,8 +26,15 @@ function set_height(items) {
 
 /**
  * @param {string} type
+ * @param {AbortController} abort_controller
  */
-async function start_sorting(type) {
+async function start_sorting(type, abort_controller) {
+	abort_controller.signal.addEventListener("abort", () => {
+		did_stop = true;
+
+		throw "Sorting aborted";
+	}, { once: true });
+
 	switch (type) {
 		case "bubble-sort":
 			await bubble_sort();
@@ -96,15 +105,15 @@ function swap(el1, el2) {
         const temp = el1.style.getPropertyValue("--_height");
         el1.style.setProperty("--_height", el2.style.getPropertyValue("--_height"));
         el2.style.setProperty("--_height", temp);
-	const temp_value = el1.getAttribute("data-value") || "1";
-	el1.setAttribute("data-value", el2.getAttribute("data-value") || "1");
-	el2.setAttribute("data-value", temp_value);
+		const temp_value = el1.getAttribute("data-value") || "1";
+		el1.setAttribute("data-value", el2.getAttribute("data-value") || "1");
+		el2.setAttribute("data-value", temp_value);
  
         window.requestAnimationFrame(function () {
             // For waiting for .25 sec
             setTimeout(() => {
                 resolve();
-            }, 100);
+            }, 75);
 		});
 	});
 }
@@ -122,19 +131,39 @@ async function bubble_sort() {
 	let did_swap = false;
 
 	for (let idx = 0; idx < array_of_items.length; ++idx) {
+		if (did_stop) {
+			did_stop = false;
+
+			return;
+		}
+
 		did_swap = false;
 
 		for (let j_idx = 0; j_idx < array_of_items.length - idx - 1; ++j_idx) {
+			if (did_stop) {
+				did_stop = false;
+
+				return;
+			}
+
 			const elt1 = array_of_items[j_idx];
 			const elt2 = array_of_items[j_idx + 1];
 
 			set_as_highlighted(elt1);
 			set_as_highlighted(elt2);
 
-			await wait(250);
+			await wait(75);
 
 			const elt1_value = get_item_value(elt1);
 			const elt2_value = get_item_value(elt2);
+			
+			if (did_stop) {
+				did_stop = false;
+				set_as_unhighlighted(elt1);
+				set_as_unhighlighted(elt2);
+
+				return;
+			}
 
 			if (elt1_value > elt2_value) {
 				did_swap = true;
@@ -152,8 +181,14 @@ async function bubble_sort() {
 	}
 
 	for (let idx = 0; idx < array_of_items.length; ++idx) {
+		if (did_stop) {
+			did_stop = false;
+
+			return;
+		}
+
 		set_as_highlighted(array_of_items[idx]);
-		await wait(250);
+		await wait(75);
 		set_as_unhighlighted(array_of_items[idx]);
 	}
 }
@@ -177,6 +212,10 @@ function wait(delay) {
  * @param {number} high
  */ 
 async function partition(arr, low, high) {
+	if (did_stop) {
+		return low;
+	}
+
 	const pivot = arr[high];
 	const pivot_value = get_item_value(pivot);
 
@@ -185,12 +224,24 @@ async function partition(arr, low, high) {
 	let idx = low - 1;
 
 	for (let i = low; i < high; ++i) {
+		if (did_stop) {
+			set_as_unhighlighted(pivot);
+
+			return low;
+		}
+
 		const elt1 = arr[i];
 		const elt1_value = get_item_value(elt1);
-		await wait(100);
-	
 		set_as_highlighted(elt1);
+		await wait(75);
 
+		if (did_stop) {
+			set_as_unhighlighted(elt1);
+			set_as_unhighlighted(pivot);
+
+			return low;
+		}
+	
 		if (elt1_value <= pivot_value) {
 			idx += 1;
 			const elt2 = arr[idx];
@@ -199,12 +250,18 @@ async function partition(arr, low, high) {
 			await swap(elt1, elt2);
 			set_as_unhighlighted(elt1);
 			set_as_unhighlighted(elt2);
+		} else {
+			set_as_unhighlighted(elt1);
 		}
 	}
 
 	set_as_unhighlighted(pivot);
 
-	await wait(100);
+	if (did_stop) {
+		return low;
+	}
+
+	await wait(75);
 
 	idx += 1;
 	set_as_highlighted(arr[high]);
@@ -230,10 +287,13 @@ async function qs(arr, low, high) {
 		return;
 	}
 
+	if (did_stop) {
+		return;
+	}
+
 	const pivot_idx = await partition(arr, low, high);
 
-	qs(arr, low, pivot_idx - 1);
-	qs(arr, pivot_idx + 1, high);
+	await Promise.all([qs(arr, low, pivot_idx - 1), qs(arr, pivot_idx + 1, high)]);
 }
 
 async function quick_sort() {
@@ -247,6 +307,22 @@ async function quick_sort() {
 	const array_of_items = Array.from(items);
 
 	await qs(array_of_items, 0, array_of_items.length - 1);
+
+	if (did_stop) {
+		did_stop = false;
+
+		return;
+	}
+
+	for (let idx = 0; idx < array_of_items.length; ++idx) {
+		if (did_stop) {
+			return;
+		}
+
+		set_as_highlighted(array_of_items[idx]);
+		await wait(50);
+		set_as_unhighlighted(array_of_items[idx]);
+	}
 }
 
 /**
@@ -304,6 +380,11 @@ function randomize(container) {
 
 window.addEventListener("DOMContentLoaded", () => {
 	/**
+	 * @type {AbortController | undefined}
+	 */
+	let abort_controller;
+
+	/**
 	 * @type {NodeListOf<HTMLButtonElement>}
 	 */
 	const randomize_btn = document.querySelectorAll("button[data-randomize]");
@@ -315,6 +396,13 @@ window.addEventListener("DOMContentLoaded", () => {
 	 * @type {NodeListOf<HTMLButtonElement>}
 	 */
 	const stop_btns = document.querySelectorAll("button[data-stop]");
+
+	stop_btns.forEach((btn) => {
+		btn.addEventListener("click", () => {
+			abort_controller?.abort();
+			abort_controller = undefined;
+		});
+	});
 
 	randomize_btn.forEach((btn) => {
 		btn.addEventListener("click", () => {
@@ -346,8 +434,10 @@ window.addEventListener("DOMContentLoaded", () => {
 				return console.warn(sorting_container + " is currently being sorted.");
 			}
 
+			abort_controller = new AbortController();
+
 			sorting_container.setAttribute("aria-busy", "true");
-			await start_sorting(btn.getAttribute("data-sortingtype") ?? "");
+			await start_sorting(btn.getAttribute("data-sortingtype") ?? "", abort_controller);
 			sorting_container.removeAttribute("aria-busy");
 		});
 	});
